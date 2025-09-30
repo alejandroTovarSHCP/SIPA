@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><beans xmlns:context="http://www.springframework.org/schema/context" xmlns:util="http://www.springframework.org/schema/util" xmlns="http://www.springframework.org/schema/beans" xmlns:p="http://www.springframework.org/schema/p" xmlns:c="http://www.fsn.shcp.gob/schema/control" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpm="http://www.fsn.shcp.gob/schema/bpm" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd                            http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd                            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd                            http://www.fsn.shcp.gob/schema/control http://www.fsn.shcp.gob/schema/control/control.xsd                            http://www.fsn.shcp.gob/schema/bpm http://www.fsn.shcp.gob/schema/control/bpm.xsd">
+  <import resource="control-config.xml"/>
+  <util:list id="viewResources.properties">
+    <value>WEB-INF/resources/bundles/application</value>
+    <value>WEB-INF/resources/bundles/validation</value>
+  </util:list>
+  
+  <c:controller id="solicitudes" class="gob.shcp.sipa.control.SolicitudesController">
+      <c:views>
+          registraSolicitud=tiles:/sipa/solicitudes/registraSolicitud
+          solicitudesRegistradas=tiles:/sipa/solicitudes/solicitudesRegistradas
+          invocaRegParaCancelacionApp=tiles:/sipa/solicitudes/invocaRegParaCancelacionApp
+          solicitudesTodas=tiles:/sipa/solicitudes/solicitudesTodas
+          solicitudesRegAut=tiles:/sipa/solicitudes/solicitudesRegAut
+          SolicitudesRegCancelacion=tiles:/sipa/solicitudes/SolicitudesRegCancelacion
+          solicitudesCanceladas=tiles:/sipa/solicitudes/solicitudesCanceladas
+          solicitudesCancelCrit=tiles:/sipa/solicitudes/solicitudesCancelCrit
+          solicitudesAutCancel=tiles:/sipa/solicitudes/solicitudesAutCancel
+     	
+          solAutorizadaAtencion=tiles:/sipa/solicitudes/solAutorizadaAtencion
+          solicitudesAtendidas=tiles:/sipa/solicitudes/solicitudesAtendidas
+          consultaSolicitudPool=tiles:/sipa/solicitudes/consultaSolicitudPool
+          consultaSolicitudPrestamo=tiles:/sipa/solicitudes/consultaSolicitudPrestamo
+          consultaSolicitudAtendida=tiles:/sipa/solicitudes/consultaSolicitudAtendida
+          
+		  eliminaSolicitud=iframe:/sipa/solicitudes/eliminaSolicitud
+		  registraRecorrido=iframe:/sipa/solicitudes/registraRecorrido
+		  registraRealizado=iframe:/sipa/solicitudes/registraRealizado
+		  validaSolicitud=tiles:/sipa/solicitudes/validaSolicitud
+		  consultaSolicitud=tiles:/sipa/solicitudes/consultaSolicitud
+		  dashBoard=tiles:/sipa/solicitudes/dashBoard
+		  estadisticaConductores=iframe:/sipa/solicitudes/estadisticaConductores
+		  estadisticaVehiculos=iframe:/sipa/solicitudes/estadisticaVehiculos
+		  estadisticaServicios=iframe:/sipa/solicitudes/estadisticaServicios
+		  registraRealizado=iframe:/sipa/solicitudes/registraRealizado
+		  descargaEvidencia=file:documento
+		  
+		  reporteSolicitudes=tiles:/sipa/solicitudes/reporteSolicitudes
+		  reporteDescarga=file:/ReporteSolicitud.pdf
+		  vehiculoNoAsignado=tiles:/sipa/solicitudes/vehiculoNoAsignado
+		  vehiculoAsignado=tiles:/sipa/solicitudes/vehiculoAsignado
+      </c:views>
+  </c:controller>
+  
+  <c:controller id="vehiculos" class="gob.shcp.sipa.control.VehiculosController">
+      <c:views>
+          consultaVehiculos=tiles:/sipa/vehiculos/consultaVehiculos
+          registraVehiculos=iframe:/sipa/vehiculos/registraVehiculo
+          editaVehiculos=iframe:/sipa/vehiculos/editaVehiculo
+		  eliminaVehiculos=iframe:/sipa/vehiculos/eliminaVehiculo
+      </c:views>
+  </c:controller>
+  
+  <c:controller id="operadores" class="gob.shcp.sipa.control.OperadoresController">
+      <c:views>
+          consultaOperadores=tiles:/sipa/operadores/consultaOperadores
+          registraOperador=iframe:/sipa/operadores/registraOperadores
+          editaOperadores=iframe:/sipa/operadores/editaOperadores
+		  eliminaOperadores=iframe:/sipa/operadores/eliminaOperadores
+      </c:views>
+  </c:controller>
+  
+  <c:controller id="servicios" class="gob.shcp.sipa.control.ServiciosController">
+      <c:views>
+      	  bandejaServiciosMant=tiles:/sipa/servicios/bandejaServiciosMant
+      	  bandejaConsultaServMant=tiles:/sipa/servicios/bandejaConsultaServMant
+          registraIngresoServicio=tiles:/sipa/servicios/registraIngresoServicio
+          registraIngServPrev=tiles:/sipa/servicios/registraIngServPrev
+          registraSalidaServicio=tiles:/sipa/servicios/registraSalidaServicio
+          detalleServicio=tiles:/sipa/servicios/detalleServicio
+          ticketIngresoServicio=tiles:/sipa/servicios/ticketIngresoServicio
+          descargaEvidencia=file:documento
+      </c:views>
+  </c:controller>  
+  
+</beans>

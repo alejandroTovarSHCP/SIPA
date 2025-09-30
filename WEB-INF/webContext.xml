@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
+                           http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.2.xsd
+                           http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.2.xsd">
+
+    <!-- Lista de URIs que no son procesadas por el SecurityFilter ni por el HandlerInterceptorAdapter -->
+    <util:list id="excludedURIs" list-class="java.util.ArrayList">
+        <value>/**/unknownError.do</value>
+        <value>/**/dispatchError.do</value>
+        <value>/**/logout.do</value>
+        <value>/**/signoff.do</value>
+        <value>/**/shcpHome.do</value>
+        <value>/**/singleSignoff.do</value>
+        <value>/**/config.do</value>
+        <value>/**/reset.do</value>
+        <value>/**/renderImage.do</value>
+        <value>/**/util/*.do</value>
+        <value>/**/*.gwt</value>
+    </util:list>
+
+    <!-- Spring Security Basic Configuration -->
+    <security:http create-session="stateless">
+        <security:intercept-url pattern="/REST/**" access="ROLE_USER"/>
+        <security:http-basic />
+    </security:http>
+    <security:authentication-manager>
+        <security:authentication-provider>
+            <security:user-service>
+                <security:user name="testrest" password="testrest1" authorities="ROLE_USER" />
+            </security:user-service>
+        </security:authentication-provider>
+    </security:authentication-manager>
+    <!-- ********************************** -->
+
+    <!-- Security filter asociado en el web.xml a *.do y *.jsp -->
+    <bean id="securityWebFilter" class="gob.shcp.fsn.control.filter.DefaultSecurityFilter"
+          p:globalUserPreferences-ref="globalUserPreferences"
+          p:localUserPreferences-ref="localUserPreferences"
+          p:listExcludedURI-ref="excludedURIs"/>
+
+    <!-- Datos especificos del usuario, por sesion. HTTP Session-scoped bean exposed as a proxy -->
+    <bean id="globalUserPreferences" class="gob.shcp.fsn.service.security.auth.UserPreferences" scope="session"
+          p:authorizationService-ref="authorizationService"
+          p:userDimensionService-ref="userDimensionService"
+          p:cacheTTL="300000"><!-- 5 minutos -->
+          <!-- this next element effects the proxying of the surrounding bean -->
+          <aop:scoped-proxy/>
+    </bean>
+
+    <!-- Clase que se encarga de validar el control de acceso para una peticion del usuario -->
+    <bean id="userAccessControlValidator" class="gob.shcp.fsn.control.interceptor.AccessControlValidator" lazy-init="true"
+        p:securityService-ref="securityService"
+        p:authorizationService-ref="authorizationService"
+        p:listExcludedURI-ref="excludedURIs"
+        p:cacheTTL="300000"/><!-- 5 minutos -->
+    <!-- Clase que se encarga de validar el control de acceso para una peticion del usuario en base a sus roles -->
+    <bean id="roleAccessControlValidator" parent="userAccessControlValidator" class="gob.shcp.fsn.control.interceptor.RoleAccessControlValidator" lazy-init="true"/>
+    <alias alias="accessControlValidator" name="userAccessControlValidator"/>
+</beans>

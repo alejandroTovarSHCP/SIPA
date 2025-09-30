@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<taglib xmlns="http://java.sun.com/xml/ns/j2ee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-jsptaglibrary_2_0.xsd"
+        version="2.0">
+        <description>This taglib enables access to the functions from JSP 2.0 Expression Language</description>
+        <tlib-version>1.0</tlib-version>
+        <short-name>functions</short-name>
+  
+  <function>
+    <name>getPropertyNames</name>
+    <function-class>gob.shcp.fsn.control.view.util.TagUtils</function-class>
+    <function-signature>java.util.List getPropertyNames(gob.shcp.fsn.model.Model)</function-signature>
+  </function>
+
+  <function>
+    <name>getOrderedPropertyNames</name>
+    <function-class>gob.shcp.fsn.control.view.util.TagUtils</function-class>
+    <function-signature>java.util.List getOrderedPropertyNames(gob.shcp.fsn.model.Model, java.lang.String)</function-signature>
+  </function>
+  
+  <function>
+    <name>getPropertyValue</name>
+    <function-class>gob.shcp.fsn.control.view.util.TagUtils</function-class>
+    <function-signature>java.util.String getPropertyValue(gob.shcp.fsn.model.Model, java.lang.String)</function-signature>
+  </function>  
+  
+  <function>
+    <name>createPagedList</name>
+    <function-class>gob.shcp.fsn.control.view.util.TagUtils</function-class>
+    <function-signature>boolean createPagedList(javax.servlet.jsp.PageContext, java.lang.String, java.lang.String, java.lang.String, java.lang.String)</function-signature>
+  </function>
+
+  <function>
+    <name>createPagedListDynaQuery</name>
+    <function-class>gob.shcp.fsn.control.view.util.TagUtils</function-class>
+    <function-signature>boolean createPagedList(javax.servlet.jsp.PageContext, java.lang.String, java.lang.String, java.lang.String, java.lang.String, boolean)</function-signature>
+  </function>
+  
+  <function>
+    <name>formatUrl</name>
+    <function-class>gob.shcp.fsn.control.view.util.TagUtils</function-class>
+    <function-signature>String formatUrl(java.lang.String)</function-signature>
+  </function>
+  
+  <function>
+    <name>appendUrlParam</name>
+    <function-class>gob.shcp.fsn.control.view.util.TagUtils</function-class>
+    <function-signature>String appendUrlParam(java.lang.String, java.lang.String, java.lang.String)</function-signature>
+  </function>
+
+  <function>
+    <name>getHtmlUniqueId</name>
+    <function-class>gob.shcp.fsn.control.view.util.TagUtils</function-class>
+    <function-signature>Integer formatUrl(javax.servlet.jsp.PageContext)</function-signature>
+  </function>
+  
+  <function>
+    <name>hasErrors</name>
+    <function-class>gob.shcp.fsn.control.view.util.TagUtils</function-class>
+    <function-signature>boolean hasErrors(javax.servlet.jsp.PageContext)</function-signature>
+  </function>
+  
+  <function>
+    <name>getInputViewParamName</name>
+    <function-class>gob.shcp.fsn.control.view.util.TagUtils</function-class>
+    <function-signature>String getInputViewParamName()</function-signature>
+  </function>
+
+  <function>
+    <name>getInputViewParamValue</name>
+    <function-class>gob.shcp.fsn.control.view.util.TagUtils</function-class>
+    <function-signature>String getInputViewParamValue(javax.servlet.jsp.PageContext)</function-signature>
+  </function>
+  
+  <function>
+    <name>saveWarning</name>
+    <function-class>gob.shcp.fsn.control.view.util.TagUtils</function-class>
+    <function-signature>saveWarning(javax.servlet.jsp.PageContext, java.lang.String, java.lang.Object...)</function-signature>
+  </function>
+</taglib>

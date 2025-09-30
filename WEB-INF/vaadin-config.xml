@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd">
+
+    <context:annotation-config/>
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
+          p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE"
+          p:ignoreUnresolvablePlaceholders="true"
+          p:ignoreResourceNotFound="true">
+          <property name="locations">
+            <list>
+                <value>classpath:META-INF/environment.properties</value>
+                <value>file:${properties.dir}/instance.properties</value>
+           </list>
+          </property>
+    </bean>
+    
+<!-- MESSAGE SOURCE (for ui only, e.g.: labels, titles, button names, etc.) -->
+    <bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+      <property name="basenames" ref="viewResources.properties"/>
+    </bean>
+
+<!-- VALIDATORS -->
+    <bean id="annotatedValidationErrorCodeResolver" class="gob.shcp.fsn.control.resolver.AnnotatedValidationErrorCodeResolver"
+          p:errorCodePrefix="error"
+          p:capitalized="false"/>
+    <bean id="configurationLoader" class="org.springmodules.validation.bean.conf.loader.annotation.AnnotationBeanValidationConfigurationLoader"/>
+    <bean id="beanValidator" class="org.springmodules.validation.bean.BeanValidator"
+          p:configurationLoader-ref="configurationLoader"
+          p:errorCodeConverter-ref="annotatedValidationErrorCodeResolver"/>
+
+<!-- HANDLER MAPPINGS RESOLVER -->
+    <!-- HandlerMapping that searchs every VaadinService bean and links to the URL based on its name.  -->
+    <bean id="vaadinClassNameHandlerMapping" class="gob.shcp.fsn.vaadin.spring.FsnVaadinAppClassNameHandlerMapping"
+          p:order="100"
+          p:caseSensitive="true"
+          p:prefix="" />
+          
+<!-- THEME RESOLVER -->
+    <!-- ThemeSource implementation that looks up an individual ResourceBundle per theme where the theme name
+         gets interpreted as ResourceBundle basename, supporting a common basename prefix for all themes. It must be named as "themeSource", "themeResolver".
+         ThemeResolver simply uses a fixed theme which name can be defined via the "defaultThemeName" property. -->
+    <bean id="themeSource" class="gob.shcp.fsn.control.view.theme.ResourceBundleThemeSourceInitializer"
+          p:basenamePrefixes="WEB-INF.resources.themes.,META-INF.resources.themes."
+          p:displayTagPropsPrefix="displaytag"/>
+    <bean id="themeResolver" class="org.springframework.web.servlet.theme.FixedThemeResolver"
+          p:defaultThemeName="${theme.name}"/>
+          
+<!-- VAADIN-SERVLET CONTROLLER  -->
+    <!-- Controller that wraps and autowire Vaadin ApplicationServlet -->
+    <bean name="vaadinApplicationController" class="gob.shcp.fsn.vaadin.spring.DelegatingVaadinApplicationController"
+          scope="prototype"
+          p:productionMode="true"
+          p:widgetSet="gob.shcp.fsn.widgetset.FsnWidgetset"
+    />
+
+<!-- LAYOUTS -->
+    <bean name="fsnTreeLayoutHandler" class="gob.shcp.fsn.vaadin.view.layout.FsnTreeLayoutHandler" scope="prototype"/>
+    <bean name="fsnTabLayoutHandler"  class="gob.shcp.fsn.vaadin.view.layout.FsnTabLayoutHandler"  scope="prototype"/>
+    <bean name="fsnVerticalLayoutHandler"  class="gob.shcp.fsn.vaadin.view.layout.FsnVerticalLayoutHandler"  scope="prototype"/>
+
+    <!-- Base class for every vaadin application. Integrates the most frecuently used FSN Services. -->
+    <bean id="abstractGenericFsnVaadinApp" class="gob.shcp.fsn.vaadin.AbstractGenericFsnVaadinApp" abstract="true" 
+          p:configurationService-ref="configurationService"
+          p:messageService-ref="messageService"
+          p:resourceService-ref="resourceService"
+          p:transformationService-ref="transformationService"
+          p:validator-ref="beanValidator"
+          p:securityService-ref="securityService"
+          p:identityService-ref="identityService"
+          p:integrationService-ref="integrationService"
+          p:persistenceService-ref="persistenceService"
+          p:batchExecutorService-ref="batchExecutorService"          
+    />
+
+<!-- VIEW RESOLVER -->
+    <bean id="defaultFsnVaadinViewResolver" class="gob.shcp.fsn.vaadin.view.resolver.DefaultFsnVaadinViewResolver"/>
+
+<!-- FIELD FACTORY-->
+    <bean id="fieldFactory" class="gob.shcp.fsn.vaadin.widget.DefaultFsnVaadinFieldFactory"/>
+    
+<!-- VIEW HANDLER base class -->
+    <bean id="fsnVaadinViewHandler" class="gob.shcp.fsn.vaadin.view.AbstractFsnVaadinViewHandler" abstract="true"
+          p:configurationService-ref="configurationService"
+          p:messageService-ref="messageService"
+          p:securityService-ref="securityService"
+          p:identityService-ref="identityService"
+          p:fieldFactory-ref="fieldFactory"
+    />
+
+<!-- CONTROLLER base classes -->
+    <bean id="abstractGenericFsnVaadinController" class="gob.shcp.fsn.vaadin.control.AbstractGenericFsnVaadinController"
+          abstract="true"
+          p:configurationService-ref="configurationService"
+          p:messageService-ref="messageService"
+          p:resourceService-ref="resourceService"
+          p:transformationService-ref="transformationService"
+          p:validator-ref="beanValidator"
+    />
+    <bean id="fsnVaadinController" class="gob.shcp.fsn.vaadin.control.AbstractFsnVaadinController"
+          abstract="true" parent="abstractGenericFsnVaadinController"
+          p:securityService-ref="securityService"
+          p:identityService-ref="identityService"
+          p:integrationService-ref="integrationService"
+          p:persistenceService-ref="persistenceService"
+          p:batchExecutorService-ref="batchExecutorService"
+          p:mailService-ref="mailService"
+          p:parameterService-ref="parameterService"
+    />
+
+</beans>

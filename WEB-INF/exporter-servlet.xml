@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:c="http://www.fsn.shcp.gob/schema/control"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
+                           http://www.fsn.shcp.gob/schema/control http://www.fsn.shcp.gob/schema/control/control.xsd">
+
+<!-- HESSIAN EXPORTED SERVICES -->
+    <!-- Expone los servicios de acceso a datos de la aplicacion de negocio 
+         (datos de catalogos para la definicion de dimensiones en el MSSN) -->
+    <bean name="/dataAccessService" class="org.springframework.remoting.caucho.HessianServiceExporter">
+        <property name="service" ref="gob.shcp.fsn.service.support.DataAccessService"/>
+        <property name="serviceInterface" value="gob.shcp.fsn.service.support.DataAccessService"/>
+    </bean>
+
+<!-- APPLICATION SPECIFIC -->
+    <!-- Expone el servicio que recibe las notificaciones del FSNBroker -->
+    <bean name="/brokerService" class="org.springframework.remoting.caucho.HessianServiceExporter">
+        <property name="service" ref="brokerService"/>
+        <property name="serviceInterface" value="gob.shcp.fsn.service.broker.BrokerService"/>
+    </bean>
+</beans>

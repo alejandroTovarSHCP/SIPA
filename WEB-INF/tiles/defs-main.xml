@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <!DOCTYPE tiles-definitions PUBLIC
+       "-//Apache Software Foundation//DTD Tiles Configuration 2.0//EN"
+       "http://tiles.apache.org/dtds/tiles-config_2_0.dtd">
+
+<tiles-definitions>
+<!-- MAIN TEMPLATE DEFINITION -->
+    <definition name="main.header" template="/WEB-INF/jsp/layout/mainHeader.jsp">
+        <put-attribute name="navigationMenu" value="/WEB-INF/jsp/layout/navigationMenu.jsp"/>
+    </definition>
+    <definition name="main.layout" template="/WEB-INF/jsp/layout/mainLayout.jsp">
+        <put-attribute name="javaScript" value="/WEB-INF/jsp/layout/javaScript.jsp"/>
+        <put-attribute name="htmlHeader" value="/WEB-INF/jsp/layout/htmlHeader.jsp"/>
+        <put-attribute name="header" value="main.header"/>
+        <put-attribute name="breadCrumb" value="/WEB-INF/jsp/layout/breadCrumb.jsp"/>
+        <put-attribute name="message" value="/WEB-INF/jsp/layout/message.jsp"/>
+        <put-attribute name="body" value="/WEB-INF/jsp/comun/home.jsp"/>
+        <put-attribute name="footer" value="/WEB-INF/jsp/layout/footer.jsp"/>
+        <put-attribute name="nocache" value="/WEB-INF/jsp/layout/nocache.jsp"/>
+    </definition>
+    <definition name="default.tiles" extends="main.layout"/>
+
+<!-- IFRAME TEMPLATE DEFINITION -->
+    <definition name="iframe.layout" template="/WEB-INF/jsp/layout/iframeLayout.jsp">
+        <put-attribute name="javaScript" value="/WEB-INF/jsp/layout/javaScript.jsp"/>        
+        <put-attribute name="htmlHeader" value="/WEB-INF/jsp/layout/htmlHeader.jsp"/>
+        <put-attribute name="breadCrumb" value="/WEB-INF/jsp/layout/breadCrumb.jsp"/>
+        <put-attribute name="onLoad" value="/WEB-INF/jsp/layout/empty.jsp"/>
+        <put-attribute name="message" value="/WEB-INF/jsp/layout/message.jsp"/>
+        <put-attribute name="body" value="/WEB-INF/jsp/layout/empty.jsp"/>        
+        <put-attribute name="onFinishLoad" value="/WEB-INF/jsp/layout/empty.jsp"/>
+        <put-attribute name="nocache" value="/WEB-INF/jsp/layout/nocache.jsp"/>
+    </definition>
+    <definition name="iframe.tiles" extends="iframe.layout">
+        <put-attribute name="onFinishLoad" value="/WEB-INF/jsp/layout/tree/viewTracking.jsp"/>
+    </definition>    
+
+<!-- TREE IFRAME TEMPLATE DEFINITION -->
+    <definition name="tree.tiles" extends="iframe.layout">
+        <put-attribute name="onLoad" value="/WEB-INF/jsp/layout/tree/refresh.jsp"/>
+        <put-attribute name="onFinishLoad" value="/WEB-INF/jsp/layout/tree/viewTracking.jsp"/>
+    </definition>    
+
+<!-- ERROR TEMPLATES -->
+    <definition name="message.layout" extends="main.layout">
+        <put-attribute name="breadCrumb" value="/WEB-INF/jsp/layout/empty.jsp"/>
+    </definition>
+    <definition name="comun.unknownerror.tiles" extends="message.layout">
+        <put-attribute name="body" value="/WEB-INF/jsp/comun/unknownerror.jsp"/>
+    </definition>
+
+    <definition name="error.header" template="/WEB-INF/jsp/layout/mainHeader.jsp">
+        <put-attribute name="navigationMenu" value="/WEB-INF/jsp/layout/empty.jsp"/>
+    </definition>
+    
+    <definition name="comun.error401.tiles" extends="main.layout">
+        <put-attribute name="header" value="error.header"/>
+        <put-attribute name="body" value="/WEB-INF/jsp/comun/error401.jsp"/>
+    </definition>
+    <definition name="comun.error403.tiles" extends="main.layout">
+        <put-attribute name="header" value="error.header"/>
+        <put-attribute name="body" value="/WEB-INF/jsp/comun/error403.jsp"/>
+    </definition>
+    <definition name="comun.error500.tiles" extends="main.layout">
+        <put-attribute name="header" value="error.header"/>
+        <put-attribute name="body" value="/WEB-INF/jsp/comun/error500.jsp"/>
+    </definition>
+
+<!-- IFRAME ERROR TEMPLATES -->
+    <definition name="message.iframe" extends="iframe.layout">
+        <put-attribute name="breadCrumb" value="/WEB-INF/jsp/layout/empty.jsp"/>
+    </definition>
+    <definition name="iframe.unknownerror.tiles" extends="message.iframe">
+        <put-attribute name="body" value="/WEB-INF/jsp/comun/unknownerror.jsp"/>
+    </definition>
+
+<!-- HOME TEMPLATE -->
+    <definition name="home.tiles" extends="main.layout">
+        <put-attribute name="body" value="/WEB-INF/jsp/comun/home.jsp"/>
+    </definition>
+    
+<!-- VAADIN TEMPLATE -->
+    <definition name="fsn.vaadin.tiles" extends="main.layout">
+        <put-attribute name="body" value="/WEB-INF/jsp/comun/vaadin.jsp"/>
+    </definition>
+</tiles-definitions>

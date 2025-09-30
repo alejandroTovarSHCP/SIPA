@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd">
+
+    <context:annotation-config/>
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
+          p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE"
+          p:ignoreUnresolvablePlaceholders="true"
+          p:ignoreResourceNotFound="true">
+          <property name="locations">
+            <list>
+                <value>classpath:META-INF/environment.properties</value>
+                <value>file:${properties.dir}/instance.properties</value>
+           </list>
+          </property>
+    </bean>
+
+    <!-- SessionAttributeStore can be used for controlling what attributes can be exposed in session context. -->
+    <bean id="sessionAttributeStore" class="org.springframework.web.bind.support.DefaultSessionAttributeStore"/>
+
+<!-- MESSAGE SOURCE (for ui only, e.g.: labels, titles, button names, etc.) -->
+    <bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+      <property name="basenames" ref="viewResources.properties"/>
+    </bean>
+
+<!-- INTERCEPTORS -->
+    <bean id="prepareViewInterceptor" class="gob.shcp.fsn.control.interceptor.PrepareViewInterceptor"
+          p:sessionAttributeStore-ref="sessionAttributeStore"
+          p:configurationService-ref="configurationService"
+          p:defaultViewType="tiles:"/>
+    <bean id="changeViewTypeInterceptor" class="gob.shcp.fsn.control.interceptor.ChangeViewTypeInterceptor"
+          p:parameterCheck="displayAjax"/>     
+    <bean id="authorizationInterceptor" class="gob.shcp.fsn.control.interceptor.DefaultAuthorizationInterceptor" lazy-init="true"         
+        p:accessControlValidator-ref="accessControlValidator"/>
+          
+<!-- HANDLER MAPPINGS RESOLVER -->
+    <!-- Maps handlers based on HTTP paths expressed through the "@RequestMapping" annotation at the type.
+         If you define custom HandlerMapping beans in your DispatcherServlet context, you need to add all other HandlerMapping bean explicitly, 
+         since custom HandlerMapping beans replace the default mapping strategies. Annotated controllers must be marked with the "@Controller" stereotype 
+         at the type level and must implement AnnotatedController interface in order for being recognized by this handler mapping. If explicit mapping
+         is not specified in "@RequestMapping" annotation then take the short name of the Class, remove the 'Controller' suffix if it exists 
+         and return the remaining text, as the mapping, with a leading / using the trailing wildcard pattern /*.
+         For example: WelcomeController -> /welcome/*. 
+         Method-level mappings are only allowed to narrow the mapping expressed at the class level (if any). HTTP paths need to uniquely map 
+         onto specific handler beans, with any given HTTP path only allowed to be mapped onto one specific handler bean. -->
+    <bean id="annotatedControllerClassNameHandlerMapping" class="gob.shcp.fsn.control.resolver.AnnotatedControllerClassNameHandlerMapping"
+          p:configurationService-ref="configurationService"
+          p:order="100"
+          p:caseSensitive="true">
+        <property name="interceptors">
+            <list>
+                <ref bean="prepareViewInterceptor"/>                                        
+                <ref bean="changeViewTypeInterceptor"/>
+                <ref bean="authorizationInterceptor"/>                
+            </list>
+        </property>
+    </bean>
+          
+<!-- MULTIACTION METHOD NAME RESOLVER -->
+    <!-- Se pueden construir un nuevo resolver que mezcle los siguientes y utilizar primero por parameter y luego por internalPath -->
+    <!-- Maps the resource name after the last slash, ignoring an extension ("/foo/bar/baz.html" to "baz") 
+         to the corresponding MultiActionController handler method -->
+    <bean id="internalPathMethodNameResolver" class="org.springframework.web.servlet.mvc.multiaction.InternalPathMethodNameResolver"
+          p:prefix=""
+          p:suffix=""/>
+
+<!-- HANDLER ADAPTER -->
+    <!-- Maps handler methods based on HTTP paths, HTTP methods and request parameters expressed through the "@RequestMapping" annotation.
+         Supports request parameter binding through the "@RequestParam" annotation. Also supports the "@ModelAttribute" annotation 
+         for exposing model attribute values to the view, as well as "@InitBinder" for binder initialization methods and 
+         "@SessionAttributes" for automatic session management of specific attributes. This adapter can be customized through various bean properties. 
+         A common use case is to apply shared binder initialization logic through a custom WebBindingInitializer.
+         It can handle controllers only if they define "@Controller" annotation at type level through methods annotated with "@RequestMapping". -->
+    <bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean" >
+        <property name="converters">
+            <set>
+                <bean class="gob.shcp.fsn.control.converter.StringToDoubleTypeConverter"/>
+                <bean class="gob.shcp.fsn.control.converter.StringToFloatTypeConverter"/>
+                <bean class="gob.shcp.fsn.control.converter.StringToLongTypeConverter"/>
+                <bean class="gob.shcp.fsn.control.converter.StringToIntegerTypeConverter"/>
+                <bean class="gob.shcp.fsn.control.converter.StringToBigDecimalTypeConverter"/>
+                <bean class="gob.shcp.fsn.control.converter.StringToBigIntegerTypeConverter"/>
+                <bean class="gob.shcp.fsn.control.converter.StringToBooleanTypeConverter"/>
+            </set>
+        </property>
+    </bean>
+    <bean id="webBindingInitializer" class="gob.shcp.fsn.control.binder.ControllerWebBindingInitializer"
+          p:conversionService-ref="conversionService"
+          p:directFieldAccess="false"
+          p:dateFormat-ref="defaultDateFormat"
+          p:upperCased="false"/>
+    <bean id="controllerAnnotatedMethodHandlerAdapter" class="gob.shcp.fsn.control.resolver.ControllerAnnotatedMethodHandlerAdapter"
+          p:order="100"
+          p:supportedMethods="GET,POST,PUT"
+          p:cacheSeconds="-1"
+          p:methodNameResolver-ref="internalPathMethodNameResolver"
+          p:sessionAttributeStore-ref="sessionAttributeStore"
+          p:webBindingInitializer-ref="webBindingInitializer"
+          p:validator-ref="beanValidator"
+          p:defaultMessage="unexpected.application.error"
+          p:messageService-ref="messageService">
+          <property name ="messageConverters">
+              <list>
+                <!-- optional-->
+                <bean class="org.springframework.http.converter.ByteArrayHttpMessageConverter"/>
+                <bean class="org.springframework.http.converter.StringHttpMessageConverter" p:writeAcceptCharset="false"/>
+                <bean class="org.springframework.http.converter.ResourceHttpMessageConverter"/>
+                <bean class="org.springframework.http.converter.xml.SourceHttpMessageConverter"/>
+                <bean class="org.springframework.http.converter.support.AllEncompassingFormHttpMessageConverter"/>
+                <!--Rome is required -->
+                <bean class="org.springframework.http.converter.feed.AtomFeedHttpMessageConverter"/>
+                <bean class="org.springframework.http.converter.feed.RssChannelHttpMessageConverter"/>
+                <!--jaxb2 required -->
+                <bean class="org.springframework.http.converter.xml.Jaxb2RootElementHttpMessageConverter"/>
+                <!--jackson2 required -->
+                <bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter"/>
+                <!--jackson1 required 
+                <bean class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter"/>
+                -->
+            </list>
+          </property>
+        </bean>
+
+<!-- LOCALE RESOLVER -->
+    <!-- Implementation of LocaleResolver that always returns a fixed default locale.
+         If it is not specified then return the current JVM's default locale. It must be named as "localeResolver" -->
+    <bean id="localeResolver" class="org.springframework.web.servlet.i18n.FixedLocaleResolver">
+        <property name="defaultLocale">
+            <bean class="java.util.Locale">
+                <constructor-arg index="0" value="es"/>
+            </bean>
+        </property>
+    </bean>
+    
+<!-- THEME RESOLVER -->
+    <!-- ThemeSource implementation that looks up an individual ResourceBundle per theme where the theme name 
+         gets interpreted as ResourceBundle basename, supporting a common basename prefix for all themes. It must be named as "themeSource", "themeResolver".
+         ThemeResolver simply uses a fixed theme which name can be defined via the "defaultThemeName" property. -->
+    <bean id="themeSource" class="gob.shcp.fsn.control.view.theme.ResourceBundleThemeSourceInitializer"
+          p:basenamePrefixes="WEB-INF.resources.themes.,META-INF.resources.themes."
+          p:displayTagPropsPrefix="displaytag"/>
+    <bean id="themeResolver" class="org.springframework.web.servlet.theme.FixedThemeResolver"
+          p:defaultThemeName="${theme.name}"/>
+
+<!-- VIEW RESOLVERS -->
+    <!-- Transforms the URI of the incoming request into a view name. It must be named as "viewNameTranslator". The default transformation 
+         simply strips the leading slash and file extension of the URI and adds the configured "prefix" and a "suffix" to the generated view name.
+         It is executed by the DispatcherServlet when no viewName is returned from controllers.
+         For example:   http://localhost:8080/gamecast/display.html -> "display" -> "tiles:/display"
+                        http://localhost:8080/gamecast/displayShoppingCart.html -> "displayShoppingCart" -> "tiles:/displayShoppingCart"
+                        http://localhost:8080/gamecast/admin/index.html -> "admin/index". -> "tiles:/admin/index" -->
+    <bean id="viewNameTranslator" class="org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator"
+          p:prefix="tiles:/"
+          p:suffix=""
+          p:separator="/"
+          p:stripLeadingSlash="true"
+          p:stripExtension="true"/>
+    <!-- Allow for direct resolution of symbolic view names to URLs, without explicit mapping definition. 
+         This is useful if your symbolic names match the names of your view resources.
+         For example:   prefix="/WEB-INF/jsp/", suffix=".jsp", viewname="test" ->  "/WEB-INF/jsp/test.jsp" 
+                        prefix="/WEB-INF/jsp/", suffix=".jsp", viewname="/foo/test" ->  "/WEB-INF/jsp/foo/test.jsp" 
+         As a special feature, redirect URLs can be specified via the "redirect:" prefix 
+         (e.g. "redirect:myAction.do" will trigger a redirect to the given URL), rather than resolution as standard view name. 
+         This is typically used for redirecting to a controller URL after finishing a form workflow.
+         Furthermore, forward URLs can be specified via the "forward:" prefix 
+         (e.g. "forward:myAction.do" will trigger a forward to the given URL), rather than resolution as standard view name. 
+         When chaining ViewResolvers, a UrlBasedViewResolver always needs to be last, as it will attempt to resolve any view name, 
+         no matter whether the underlying resource actually exists. If leading slash is present then remove from view name. -->
+    <bean id="jstlResourceViewResolver" class="gob.shcp.fsn.control.resolver.view.JstlInternalResourceViewResolver"
+          p:prefix="/WEB-INF/jsp/"
+          p:suffix=".jsp"
+          p:order="1100"
+          p:viewClass="org.springframework.web.servlet.view.JstlView"
+          p:contentType="text/html;charset=ISO-8859-1"
+          p:requestContextAttribute="requestContext"
+          p:redirectContextRelative="false"
+          p:redirectHttp10Compatible="false"
+          p:stripLeadingSlash="true"/>
+    <!-- Allow for direct resolution of symbolic view names to tiles definition names, without explicit mapping definition.
+         This is useful if your symbolic names match the names of your tiles definitions resources.
+         For example:   prefix="", suffix="tiles", viewname="test" -> tilesDef="test.tiles", bodyValue="/WEB-INF/jsp/test.jsp"
+                        prefix="", suffix="tiles", viewname="/foo/test" -> tilesDef="foo.test.tiles", bodyValue="/WEB-INF/jsp/foo/test.jsp"
+                        prefix="", suffix="tiles", viewname="tiles:/foo/test", with no tiles definition -> tilesDef="default.tiles", bodyValue="/WEB-INF/jsp/foo/test.jsp"
+         Defines some default values for: separator=".", definitionName="default.tiles", bodyAttributeName="body". 
+         These defaults are only valid if the symbolic names starts with "tiles:". Otherwise follow with another view resolver in the chain.
+                        <definition name="foo.test.tiles[default.tiles]" template="/layouts/classic.jsp"[extends="form.layout"]>
+                          <put-attribute name="body" value="/WEB-INF/jsp/foo/test.jsp[/WEB-INF/jsp/default.jsp]"/>
+                        </definition>  
+         Automatic detection by type of the "tilesConfigurer" from dispatcher servlet context. -->
+    <bean id="tilesConfigurer" class="org.springframework.web.servlet.view.tiles2.TilesConfigurer">
+        <property name="definitions">
+            <list>
+                <value>/WEB-INF/tiles/defs-main.xml</value>
+            </list>
+        </property>
+    </bean>
+    <bean id="tilesResourceViewResolver" class="gob.shcp.fsn.control.resolver.view.TilesInternalResourceViewResolver"
+          p:prefix=""
+          p:suffix=".tiles"
+          p:order="1000"
+          p:viewClass="gob.shcp.fsn.control.view.DefaultTilesView"
+          p:contentType="text/html;charset=ISO-8859-1"
+          p:requestContextAttribute="requestContext"
+          p:redirectContextRelative="true"
+          p:stripLeadingSlash="true"
+          p:separator="."
+          p:defaultDefinition="default.tiles"
+          p:bodyAttribute="body"
+          p:bodyPrefix="/WEB-INF/jsp/"
+          p:bodySuffix=".jsp"/>
+    <bean id="iframeResourceViewResolver" class="gob.shcp.fsn.control.resolver.view.IFrameInternalResourceViewResolver"
+          p:prefix=""
+          p:suffix=".tiles"
+          p:order="950"
+          p:viewClass="gob.shcp.fsn.control.view.DefaultTilesView"
+          p:contentType="text/html;charset=ISO-8859-1"
+          p:requestContextAttribute="requestContext"
+          p:redirectContextRelative="true"
+          p:stripLeadingSlash="true"
+          p:separator="."
+          p:defaultDefinition="iframe.tiles"
+          p:bodyAttribute="body"
+          p:bodyPrefix="/WEB-INF/jsp/"
+          p:bodySuffix=".jsp"
+          p:urlPrefix="iframe:"/>
+    <bean id="treeResourceViewResolver" class="gob.shcp.fsn.control.resolver.view.IFrameInternalResourceViewResolver"
+          p:prefix=""
+          p:suffix=".tiles"
+          p:order="900"
+          p:viewClass="gob.shcp.fsn.control.view.DefaultTilesView"
+          p:contentType="text/html;charset=ISO-8859-1"
+          p:requestContextAttribute="requestContext"
+          p:redirectContextRelative="true"
+          p:stripLeadingSlash="true"
+          p:separator="."
+          p:defaultDefinition="tree.tiles"
+          p:bodyAttribute="body"
+          p:bodyPrefix="/WEB-INF/jsp/"
+          p:bodySuffix=".jsp"
+          p:urlPrefix="tframe:"/>
+    <bean id="jasperResourceViewResolver" class="gob.shcp.fsn.control.resolver.view.JasperReportsResourceViewResolver"
+          p:prefix="/WEB-INF/reports/"
+          p:suffix=""
+          p:order="800"
+          p:viewClass="gob.shcp.fsn.control.view.GenericJasperReportsView"
+          p:requestContextAttribute="requestContext"
+          p:jdbcDataSource-ref="gob.shcp.fsn.DataSource"
+          p:reportDataKey="reportData"
+          p:stripLeadingSlash="true"
+          p:reportExtensions=".jrxml,.jasper"
+          p:defaultFormat="html"
+          p:imagesPrefix="/images/reports/">
+        <property name="formatMappings">
+            <util:map map-class="java.util.Properties">
+                <entry key="csv"  value="net.sf.jasperreports.engine.export.JRCsvExporter"/>
+                <entry key="html" value="net.sf.jasperreports.engine.export.JRHtmlExporter"/>
+                <entry key="pdf"  value="net.sf.jasperreports.engine.export.JRPdfExporter"/>
+                <entry key="xls"  value="net.sf.jasperreports.engine.export.JRXlsExporter"/>
+                <entry key="xlsx" value="net.sf.jasperreports.engine.export.ooxml.JRXlsxExporter"/>
+                <entry key="rtf"  value="net.sf.jasperreports.engine.export.JRRtfExporter"/>
+                <entry key="docx" value="net.sf.jasperreports.engine.export.ooxml.JRDocxExporter"/>
+                <entry key="pptx" value="net.sf.jasperreports.engine.export.ooxml.JRPptxExporter"/>
+                <entry key="txt"  value="net.sf.jasperreports.engine.export.JRTextExporter"/>
+                <entry key="xml"  value="net.sf.jasperreports.engine.export.JRXmlExporter"/>
+            </util:map>
+        </property>
+        <property name="contentTypes">
+            <util:map map-class="java.util.Properties">
+                <entry key="csv"  value="text/csv"/>
+                <entry key="html" value="text/html;charset=ISO-8859-1"/>
+                <entry key="pdf"  value="application/pdf"/>
+                <entry key="xls"  value="application/vnd.ms-excel"/>
+                <entry key="xlsx" value="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/>
+                <entry key="rtf"  value="application/rtf"/>
+                <entry key="docx" value="application/vnd.openxmlformats-officedocument.wordprocessingml.document"/>
+                <entry key="pptx" value="application/vnd.openxmlformats-officedocument.presentationml.presentation"/>
+                <entry key="txt"  value="text/plain"/>
+                <entry key="xml"  value="text/xml"/>
+            </util:map>
+        </property>
+    </bean>
+    <!-- Allow for direct resolution of symbolic view names to pdf files, without explicit mapping definition.
+         This is useful if your symbolic names match the names of the bean that render the pdf file content.
+         For example:   viewname="test" -> beanName="test"
+                        viewname="/foo/test" -> beanName="fooTest"
+         These view resolver is only valid if the symbolic names starts with "pdf:". Otherwise follow with another view resolver in the chain. -->
+    <bean id="pdfResourceViewResolver" class="gob.shcp.fsn.control.resolver.view.PdfResourceViewResolver"
+          p:suffix=".pdf"
+          p:order="700"
+          p:viewClass="gob.shcp.fsn.control.view.SimplePdfView"
+          p:contentType="application/pdf"
+          p:requestContextAttribute="requestContext"
+          p:stripLeadingSlash="true"/>
+    <!-- Allow for direct resolution of symbolic view names to excel files, without explicit mapping definition.
+         This is useful if your symbolic names match the names of the bean that render the excel file content and optionally a template excel file.
+         For example:   prefix="/WEB-INF/excel/", suffix=".xls", viewname="test" -> beanName="test", excelTemplateFilePath="/WEB-INF/excel/test.xls"
+                        prefix="/WEB-INF/excel/", suffix=".xls", viewname="/foo/test" -> beanName="fooTest", excelTemplateFilePath="/WEB-INF/excel/foo/test.xls"
+         These view resolver is only valid if the symbolic names starts with "excel:". Otherwise follow with another view resolver in the chain. -->
+    <bean id="excelResourceViewResolver" class="gob.shcp.fsn.control.resolver.view.ExcelResourceViewResolver"
+          p:prefix="/WEB-INF/excel/"
+          p:suffix=".xls"
+          p:order="600"
+          p:viewClass="gob.shcp.fsn.control.view.SimpleExcelView"
+          p:contentType="application/vnd.ms-excel"
+          p:requestContextAttribute="requestContext"
+          p:stripLeadingSlash="true"/>
+    <!-- Allow for direct resolution of symbolic view names to csv (comma-separated values) files, without explicit mapping definition.
+         This is useful if your symbolic names match the names of the bean that render the csv file content and optionally a template xml file.
+         For example:   prefix="/WEB-INF/csv/", suffix=".xml", viewname="test" -> beanName="test", csvFilePath="/WEB-INF/csv/test.xml"
+                        prefix="/WEB-INF/csv/", suffix=".xml", viewname="/foo/test" -> beanName="fooTest", csvFilePath="/WEB-INF/csv/foo/test.xml"
+         These view resolver is only valid if the symbolic names starts with "csv:". Otherwise follow with another view resolver in the chain. -->
+    <bean id="csvResourceViewResolver" class="gob.shcp.fsn.control.resolver.view.CsvResourceViewResolver"
+          p:prefix="/WEB-INF/csv/"
+          p:suffix=".xml"
+          p:order="500"
+          p:viewClass="gob.shcp.fsn.control.view.SimpleCsvView"
+          p:contentType="text/csv"
+          p:requestContextAttribute="requestContext"
+          p:stripLeadingSlash="true"/>
+    <!-- Allow for direct resolution of symbolic view names to xml files, without explicit mapping definition.
+         This is useful if your symbolic names match the names of the bean that render the xml file content.
+         For example:   viewname="test" -> beanName="test"
+                        viewname="/foo/test" -> beanName="fooTest"
+         These view resolver is only valid if the symbolic names starts with "xml:". Otherwise follow with another view resolver in the chain. -->
+    <bean id="xmlResourceViewResolver" class="gob.shcp.fsn.control.resolver.view.XmlResourceViewResolver"
+          p:suffix=".xml"
+          p:order="400"
+          p:viewClass="gob.shcp.fsn.control.view.SimpleXmlView"
+          p:contentType="application/xml"
+          p:requestContextAttribute="requestContext"
+          p:stripLeadingSlash="true"/>
+    <!-- Allow for direct resolution of symbolic view names to text (plain) files, without explicit mapping definition.
+         This is useful if your symbolic names match the names of the bean that render the text file content.
+         For example:   viewname="test" -> beanName="test"
+                        viewname="/foo/test" -> beanName="fooTest"
+         These view resolver is only valid if the symbolic names starts with "text:". Otherwise follow with another view resolver in the chain. -->
+    <bean id="textResourceViewResolver" class="gob.shcp.fsn.control.resolver.view.TextResourceViewResolver"
+          p:suffix=".txt"
+          p:order="300"
+          p:viewClass="gob.shcp.fsn.control.view.SimpleTextView"
+          p:contentType="text/plain"
+          p:requestContextAttribute="requestContext"
+          p:stripLeadingSlash="true"/>
+    <bean id="fileResourceViewResolver" class="gob.shcp.fsn.control.resolver.view.FileResourceViewResolver"          
+          p:order="200"
+          p:viewClass="gob.shcp.fsn.control.view.SimpleFileResourceView"
+          p:requestContextAttribute="requestContext"
+          p:stripLeadingSlash="true"
+          p:resourceService-ref="resourceService"/>
+
+<!-- EXCEPTION RESOLVERS -->
+    <bean id="bindExceptionResolver" class="gob.shcp.fsn.control.converter.BindExceptionResolver"
+          p:sessionAttributeStore-ref="sessionAttributeStore"
+          p:defaultErrorView="tiles:comun/unknownerror"
+          p:order="50"/>
+    <bean id="controllerExceptionResolver" class="gob.shcp.fsn.control.resolver.ControllerExceptionResolver"
+          p:sessionAttributeStore-ref="sessionAttributeStore"
+          p:defaultErrorView="tiles:comun/unknownerror"
+          p:order="100"/>
+    <bean id="securityExceptionResolver" class="gob.shcp.fsn.control.resolver.SecurityExceptionResolver"
+          p:defaultStatusCode="403"
+          p:defaultErrorView="tiles:comun/error"
+          p:order="200"/>
+    <bean id="genericExceptionResolver" class="gob.shcp.fsn.control.resolver.GenericExceptionResolver"
+          p:defaultErrorView="tiles:comun/unknownerror"
+          p:stackTraceAttribute="exceptionStackTrace"
+          p:order="900">
+        <property name="errorMappings">
+            <util:map map-class="java.util.Properties">
+                <entry key="iframe:" value="iframe:iframe/unknownerror"/><!-- Resolved as tiles: iframe.unknownerror.tiles -->
+                <entry key="tframe:" value="tframe:iframe/unknownerror"/><!-- Resolved as tiles: iframe.unknownerror.tiles -->
+                <entry key="jasper:" value="iframe:iframe/unknownerror"/><!-- Resolved as tiles: iframe.unknownerror.tiles -->
+            </util:map>
+        </property>
+    </bean>
+
+<!-- MULTIPART RESOLVER -->
+    <!-- Servlet-based MultipartResolver implementation for Commons FileUpload 1.2 or above. Provides "maxUploadSize", "maxInMemorySize"
+         and "defaultEncoding" settings as bean properties (inherited from CommonsFileUploadSupport). See corresponding ServletFileUpload / DiskFileItemFactory 
+         properties ("sizeMax", "sizeThreshold", "headerEncoding") for details in terms of defaults and accepted values. 
+         Saves temporary files to the servlet container's temporary directory. Needs to be initialized either by an application context or 
+         via the constructor that takes a ServletContext (for standalone usage). One of the properties available; the maximum file size in bytes.
+         It must be named as "multipartResolver". -->
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"
+          p:maxUploadSize="20971520"/><!-- 1024 * 20000 -->
+
+<!-- VALIDATORS -->
+    <bean id="annotatedValidationErrorCodeResolver" class="gob.shcp.fsn.control.resolver.AnnotatedValidationErrorCodeResolver"
+          p:errorCodePrefix="error"
+          p:capitalized="false"/>
+    <!--vld:annotation-based-validator id="beanValidator" errorCodeConverter="annotatedValidationErrorCodeResolver"/-->
+    <bean id="configurationLoader" class="org.springmodules.validation.bean.conf.loader.annotation.AnnotationBeanValidationConfigurationLoader"/>
+    <bean id="beanValidator" class="org.springmodules.validation.bean.BeanValidator"
+          p:configurationLoader-ref="configurationLoader"
+          p:errorCodeConverter-ref="annotatedValidationErrorCodeResolver"/>
+
+<!-- CONTROLLERS -->
+    <!-- Controller for base abstract beans. For supporting dispatch action controller set "dispatchActionController" property -->
+    <bean id="abstractGenericController" class="gob.shcp.fsn.control.AbstractGenericController" abstract="true"
+          p:configurationService-ref="configurationService"
+          p:messageService-ref="messageService"
+          p:resourceService-ref="resourceService"
+          p:transformationService-ref="transformationService"
+          p:cacheSeconds="-1"
+          p:defaultSuccessView="tiles:home"
+          p:validator-ref="beanValidator"/>
+    <!-- Controller for supporting tipical dispatch action controller, provided with several service to resolve business goals -->
+    <bean id="abstractController" class="gob.shcp.fsn.control.AbstractController" parent="abstractGenericController" abstract="true"
+          p:securityService-ref="securityService"
+          p:identityService-ref="identityService"
+          p:integrationService-ref="integrationService"
+          p:persistenceService-ref="persistenceService"
+          p:batchExecutorService-ref="batchExecutorService"
+          p:mailService-ref="mailService"
+          p:noticeService-ref="noticeService"
+          p:parameterService-ref="parameterService"/>
+
+    <!-- Main Controller -->
+    <!-- Contains generic actions related to controllers (e.g.: home, logout, logoff, etc.).
+         For display home page take defaultSuccessView property value and look for a tiles definition named: "home.tile" according "tilesResourceViewResolver". -->
+    <bean name="redirectForward" class="gob.shcp.fsn.control.support.RedirectForward"
+          p:shcpHome="${seg.home.url}"
+          p:signoffUrl="${seg.single.signoff.url}"/>
+    <bean id="main" parent="abstractController" class="gob.shcp.fsn.control.support.MainController"
+          p:defaultSuccessView="tiles:home"
+          p:errorViewPrefix="tiles:comun/error"
+          p:redirectForward-ref="redirectForward"
+          p:defaultVaadinView="tiles:fsn/vaadin"
+          p:defaultFsnJbpmcaView="tiles:comun/fsnjbpmca"
+          p:defaultJbpmcaView="tiles:comun/jbpmca"
+          p:configView="tiles:comun/config"
+          p:requestParameterName="parameterName"
+          p:requestContentType="contentType"
+          p:imageHeight="60"
+          p:imageWidth="150"/>
+    <bean id="util" parent="abstractController" class="gob.shcp.fsn.control.support.UtilController"/>
+
+<!-- MENU -->
+    <bean id="menu" class="gob.shcp.fsn.control.view.menu.MenuLoader"
+          p:menuConfig="META-INF/resources/menu-config.xml"/>
+
+<!-- TREE -->
+    <bean id="tree" class="gob.shcp.fsn.control.view.tree.TreeLoader"
+          p:treeConfig="/WEB-INF/tree/tree-config.xml"
+          p:dynaContentService-ref="gob.shcp.fsn.service.support.DynaContentService"/>
+</beans>
